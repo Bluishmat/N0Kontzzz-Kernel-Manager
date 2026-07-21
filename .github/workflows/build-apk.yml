@@ -55,19 +55,27 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Create gradle.properties with increased memory
+        run: |
+          echo "org.gradle.jvmargs=-Xmx4g" >> gradle.properties
+          echo "org.gradle.daemon=false" >> gradle.properties
+          echo "kotlin.daemon.jvmargs=-Xmx2g" >> gradle.properties
+
       - name: Build Debug APK
         if: github.event_name != 'workflow_dispatch' || github.event.inputs.build_type == 'debug' || github.event.inputs.build_type == 'both'
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --no-daemon
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
           CARGO: cargo
+          _JAVA_OPTIONS: -Xmx4g
 
       - name: Build Release APK
         if: github.event_name != 'workflow_dispatch' || github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both'
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease --no-daemon
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
           CARGO: cargo
+          _JAVA_OPTIONS: -Xmx4g
 
       - name: Upload Debug APK
         if: github.event_name != 'workflow_dispatch' || github.event.inputs.build_type == 'debug' || github.event.inputs.build_type == 'both'
