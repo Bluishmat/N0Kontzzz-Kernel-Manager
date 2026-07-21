@@ -12,6 +12,16 @@ on:
       - main
       - develop
   workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - debug
+          - release
+          - both
 
 jobs:
   build:
@@ -45,19 +55,22 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build APK (Debug)
+      - name: Build Debug APK
+        if: github.event_name != 'workflow_dispatch' || github.event.inputs.build_type == 'debug' || github.event.inputs.build_type == 'both'
         run: ./gradlew assembleDebug
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
           CARGO: cargo
 
-      - name: Build APK (Release)
+      - name: Build Release APK
+        if: github.event_name != 'workflow_dispatch' || github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both'
         run: ./gradlew assembleRelease
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
           CARGO: cargo
 
       - name: Upload Debug APK
+        if: github.event_name != 'workflow_dispatch' || github.event.inputs.build_type == 'debug' || github.event.inputs.build_type == 'both'
         uses: actions/upload-artifact@v4
         with:
           name: debug-apk
@@ -65,6 +78,7 @@ jobs:
           retention-days: 30
 
       - name: Upload Release APK
+        if: github.event_name != 'workflow_dispatch' || github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both'
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
@@ -74,9 +88,9 @@ jobs:
       - name: Generate Build Report
         if: always()
         run: |
-          echo "## Build Report" >> $GITHUB_STEP_SUMMARY
+          echo "## Build APK Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Build Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Event:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
